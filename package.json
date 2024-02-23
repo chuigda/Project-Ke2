@@ -1,0 +1,11 @@
+{
+  "name": "project-ke2",
+  "version": "1.0.0",
+  "description": "JavaScript HCE chess engine",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chuigda WhiteGive",
+  "license": "ISC"
+}
