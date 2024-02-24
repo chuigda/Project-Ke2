@@ -27,3 +27,5 @@ export function initOpeningBook(): Record<string, OpeningPosition> {
 
     return ret
 }
+
+export const OpeningBook = initOpeningBook()
