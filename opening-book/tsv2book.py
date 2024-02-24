@@ -39,7 +39,10 @@ def add_line(line_pgn: str, eco: str, name: str):
                 book[fen]["name"] = name
 
         info = engine.analyse(board, chess.engine.Limit(depth=10))
-        score = info["score"].white().score(mate_score=999)
+        if "score" not in info:
+            score = prev_score
+        else:
+            score = info["score"].white().score(mate_score=999)
 
         if line.move is not None:
             uci = line.move.uci()
