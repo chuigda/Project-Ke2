@@ -45,6 +45,8 @@ def add_line(line_pgn: str, eco: str, name: str):
             uci = line.move.uci()
             if uci not in book[prev_fen]["moves"]:
                 score_diff = score - prev_score
+                if line.turn() == chess.WHITE:
+                    score_diff = -score_diff
                 book[prev_fen]["moves"][uci] = score_diff
 
         prev_fen = fen
