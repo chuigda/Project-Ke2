@@ -1,6 +1,7 @@
 import { Chess, Square } from 'chess.js'
 import { PlayerSide, PieceKind, ChessboardFiles } from './def'
 import { OpeningBook } from './opening'
+import { Ref } from './ref'
 
 export const PieceValue: Record<PieceKind, number> = {
     'k': 99999,
@@ -68,7 +69,7 @@ export const RookValueMap: Record<PlayerSide, number[]> = {
     ]
 }
 
-export function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): number {
+export function hceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): number {
     if (!withoutKing && game.isCheckmate()) {
         if (side === game.turn()) {
             return -PieceValue['k']
@@ -126,20 +127,12 @@ export function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boole
     }
 }
 
-// the game engine could evaluate positions without kings, this is very useful for some
-// mini games
-export function hceEvaluate(fen: string, side: PlayerSide, withoutKing: boolean): number {
-    const game = new Chess()
-    game.load(fen, { skipValidation: withoutKing })
-
-    return impHceEvaluate(game, side, withoutKing)
-}
-
-export function impFindMoves(game: Chess, fen?: string): [string, number][] {
-    if (!fen) {
-        fen = game.fen()
-    }
-
+export function findMoves(
+    game: Chess,
+    depth: number,
+    counter: Ref<number>
+): [string, number][] {
+    const fen = game.fen()
     const fenWithoutMoveCounter = fen.split(' ').slice(0, 4).join(' ')
     if (OpeningBook[fenWithoutMoveCounter]) {
         const bookMoves = OpeningBook[fenWithoutMoveCounter].moves
@@ -149,14 +142,14 @@ export function impFindMoves(game: Chess, fen?: string): [string, number][] {
     }
 
     const currentSide = game.turn()
-    const currentScore = impHceEvaluate(game, currentSide, false)
+    const currentScore = hceEvaluate(game, currentSide, false)
 
     const moves = game.moves({ verbose: true })
     const scores: [string, number][] = []
 
     for (const move of moves) {
         game.move(move)
-        const score = impHceEvaluate(game, currentSide, false)
+        const score = dfsEvaluate(game, depth, counter)
         const scoreDiff = score - currentScore
         game.undo()
 
@@ -167,36 +160,46 @@ export function impFindMoves(game: Chess, fen?: string): [string, number][] {
     return scores
 }
 
-export function findMoves(fen: string): [string, number][] {
-    const game = new Chess()
-    game.load(fen)
-
-    return impFindMoves(game, fen)
-}
-
-export function findOneMove(fen: string): [string, number] {
-    const scores = findMoves(fen)
-    console.log(scores)
-    
-    if (scores.length === 0) {
-        return ['', 0]
+export function dfsEvaluate(
+    game: Chess,
+    depth: number,
+    counter: Ref<number>
+): number {
+    counter.value += 1
+    if (depth === 0) {
+        // evaluate for OPPONENT side
+        return hceEvaluate(game, game.turn(), true)
     }
 
-    // randomly pick a move that is not a blunder (centipawn - 250)
-    const blunderThreshold = -250
-    const nonBlunders = scores.filter(x => x[1] > blunderThreshold)
-    // if in zugzwang, just do our
-    if (nonBlunders.length === 0) {
-        return scores[0]
+    const moves = game.moves({ verbose: true })
+    if (moves.length === 0) {
+        if (game.isCheckmate()) {
+            // after the player moves, the opponent is checkmated, so the player wins
+            return 99999
+        } else if (game.isStalemate()) {
+            return 0
+        } else {
+            // don't know what to do here
+            return 0
+        }
     }
 
-    // pick one from the non-blunders
-    return nonBlunders[Math.floor(Math.random() * nonBlunders.length)]
+    const scores = []
+    for (const move of moves) {
+        game.move(move)
+        const score = dfsEvaluate(game, depth - 1, counter)
+        game.undo()
+        scores.push(score)
+    }
+
+    return Math.min(...scores)
 }
 
-export function impFindOneMove(game: Chess, fen?: string): [string, number] {
-    const moves = impFindMoves(game, fen)
-    console.log(moves)
+export function findOneMove(game: Chess, depth: number): [string, number] {
+    const counter = { value: 0 }
+    const moves = findMoves(game, depth, counter)
+    console.log('searched positions:', counter.value)
+    console.log('found moves:', moves)
 
     if (moves.length === 0) {
         return ['', 0]
