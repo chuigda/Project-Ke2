@@ -192,7 +192,7 @@ export function dfsEvaluate(
         scores.push(score)
     }
 
-    return Math.min(...scores)
+    return Math.max(...scores)
 }
 
 export function findOneMove(game: Chess, depth: number): [string, number] {
