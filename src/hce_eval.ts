@@ -68,7 +68,7 @@ export const RookValueMap: Record<PlayerSide, number[]> = {
     ]
 }
 
-function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): number {
+export function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): number {
     if (!withoutKing && game.isCheckmate()) {
         if (side === game.turn()) {
             return -PieceValue['k']
@@ -85,7 +85,12 @@ function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): nu
             const square = `${ChessboardFiles[file]}${rank + 1}`
             const linearIdx = rank * 8 + file
 
-            const { color, type } = game.get(<Square>square)
+            const piece = game.get(<Square>square)
+            if (!piece) {
+                continue
+            }
+
+            const { color, type } = piece
 
             let pieceValue
             switch (type) {
@@ -137,21 +142,25 @@ export function impFindMoves(game: Chess, fen?: string): [string, number][] {
 
     const fenWithoutMoveCounter = fen.split(' ').slice(0, 4).join(' ')
     if (OpeningBook[fenWithoutMoveCounter]) {
-        return OpeningBook[fenWithoutMoveCounter].moves
+        const bookMoves = OpeningBook[fenWithoutMoveCounter].moves
+        if (bookMoves.length != 0) {
+            return bookMoves
+        }
     }
 
     const currentSide = game.turn()
     const currentScore = impHceEvaluate(game, currentSide, false)
 
-    const moves = game.moves()
+    const moves = game.moves({ verbose: true })
     const scores: [string, number][] = []
 
     for (const move of moves) {
         game.move(move)
         const score = impHceEvaluate(game, currentSide, false)
         const scoreDiff = score - currentScore
+        game.undo()
 
-        scores.push([move, scoreDiff])
+        scores.push([move.lan, scoreDiff])
     }
 
     scores.sort((a, b) => b[1] - a[1])
@@ -167,6 +176,7 @@ export function findMoves(fen: string): [string, number][] {
 
 export function findOneMove(fen: string): [string, number] {
     const scores = findMoves(fen)
+    console.log(scores)
     
     if (scores.length === 0) {
         return ['', 0]
@@ -186,6 +196,7 @@ export function findOneMove(fen: string): [string, number] {
 
 export function impFindOneMove(game: Chess, fen?: string): [string, number] {
     const moves = impFindMoves(game, fen)
+    console.log(moves)
 
     if (moves.length === 0) {
         return ['', 0]
