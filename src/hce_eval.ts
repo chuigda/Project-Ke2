@@ -1,5 +1,6 @@
 import { Chess, Square } from 'chess.js'
 import { PlayerSide, PieceKind, ChessboardFiles } from './def'
+import { OpeningBook } from './opening'
 
 export const PieceValue: Record<PieceKind, number> = {
     'k': 999.99,
@@ -67,13 +68,8 @@ export const RookValueMap: Record<PlayerSide, number[]> = {
     ]
 }
 
-// the game engine could evaluate positions without kings, this is very useful for some
-// mini games
-export function hceEvaluate(fen: string, side: PlayerSide, withoutKing: boolean): number {
-    const game = new Chess()
-    game.load(fen, { skipValidation: withoutKing })
-
-    if (game.isCheckmate()) {
+function impHceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean): number {
+    if (!withoutKing && game.isCheckmate()) {
         if (side === game.turn()) {
             return -PieceValue['k']
         } else {
@@ -123,4 +119,38 @@ export function hceEvaluate(fen: string, side: PlayerSide, withoutKing: boolean)
     } else {
         return blackScore - whiteScore
     }
+}
+
+// the game engine could evaluate positions without kings, this is very useful for some
+// mini games
+export function hceEvaluate(fen: string, side: PlayerSide, withoutKing: boolean): number {
+    const game = new Chess()
+    game.load(fen, { skipValidation: withoutKing })
+
+    return impHceEvaluate(game, side, withoutKing)
+}
+
+export function findMoves(fen: string): [string, number][] {
+    if (OpeningBook[fen]) {
+        return OpeningBook[fen].moves
+    }
+
+    const game = new Chess()
+    game.load(fen)
+
+    const currentSide = game.turn()
+    const currentScore = impHceEvaluate(game, currentSide, false)
+
+    const moves = game.moves()
+    const scores: [string, number][] = []
+
+    for (const move of moves) {
+        game.move(move)
+        const score = impHceEvaluate(game, currentSide, false)
+        const scoreDiff = score - currentScore
+
+        scores.push([move, scoreDiff])
+    }
+
+    return scores
 }
