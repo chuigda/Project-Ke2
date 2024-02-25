@@ -130,13 +130,15 @@ export function hceEvaluate(fen: string, side: PlayerSide, withoutKing: boolean)
     return impHceEvaluate(game, side, withoutKing)
 }
 
-export function findMoves(fen: string): [string, number][] {
-    if (OpeningBook[fen]) {
-        return OpeningBook[fen].moves
+export function impFindMoves(game: Chess, fen?: string): [string, number][] {
+    if (!fen) {
+        fen = game.fen()
     }
 
-    const game = new Chess()
-    game.load(fen)
+    const fenWithoutMoveCounter = fen.split(' ').slice(0, 4).join(' ')
+    if (OpeningBook[fenWithoutMoveCounter]) {
+        return OpeningBook[fenWithoutMoveCounter].moves
+    }
 
     const currentSide = game.turn()
     const currentScore = impHceEvaluate(game, currentSide, false)
@@ -156,6 +158,13 @@ export function findMoves(fen: string): [string, number][] {
     return scores
 }
 
+export function findMoves(fen: string): [string, number][] {
+    const game = new Chess()
+    game.load(fen)
+
+    return impFindMoves(game, fen)
+}
+
 export function findOneMove(fen: string): [string, number] {
     const scores = findMoves(fen)
     
@@ -169,6 +178,25 @@ export function findOneMove(fen: string): [string, number] {
     // if in zugzwang, just do our
     if (nonBlunders.length === 0) {
         return scores[0]
+    }
+
+    // pick one from the non-blunders
+    return nonBlunders[Math.floor(Math.random() * nonBlunders.length)]
+}
+
+export function impFindOneMove(game: Chess, fen?: string): [string, number] {
+    const moves = impFindMoves(game, fen)
+
+    if (moves.length === 0) {
+        return ['', 0]
+    }
+
+    // randomly pick a move that is not a blunder (centipawn - 250)
+    const blunderThreshold = -250
+    const nonBlunders = moves.filter(x => x[1] > blunderThreshold)
+    // if in zugzwang, just do our
+    if (nonBlunders.length === 0) {
+        return moves[0]
     }
 
     // pick one from the non-blunders
