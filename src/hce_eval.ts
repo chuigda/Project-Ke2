@@ -3,12 +3,12 @@ import { PlayerSide, PieceKind, ChessboardFiles } from './def'
 import { OpeningBook } from './opening'
 
 export const PieceValue: Record<PieceKind, number> = {
-    'k': 999.99,
-    'q': 9,
-    'b': 3.1,
-    'n': 2.9,
-    'r': 5,
-    'p': 1
+    'k': 99999,
+    'q': 900,
+    'b': 310,
+    'n': 290,
+    'r': 500,
+    'p': 100
 }
 
 // Since king also can take a part in the battle, we give it a value
@@ -152,5 +152,25 @@ export function findMoves(fen: string): [string, number][] {
         scores.push([move, scoreDiff])
     }
 
+    scores.sort((a, b) => b[1] - a[1])
     return scores
+}
+
+export function findOneMove(fen: string): [string, number] {
+    const scores = findMoves(fen)
+    
+    if (scores.length === 0) {
+        return ['', 0]
+    }
+
+    // randomly pick a move that is not a blunder (centipawn - 250)
+    const blunderThreshold = -250
+    const nonBlunders = scores.filter(x => x[1] > blunderThreshold)
+    // if in zugzwang, just do our
+    if (nonBlunders.length === 0) {
+        return scores[0]
+    }
+
+    // pick one from the non-blunders
+    return nonBlunders[Math.floor(Math.random() * nonBlunders.length)]
 }
