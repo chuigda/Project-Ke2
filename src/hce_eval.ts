@@ -161,9 +161,16 @@ export function dfsEvaluatePosition(
 
     // if the last move benefits the player too much, we don't need to go further
     // for example, opponent captured your material but you don't recapture or
-    // check the opponent
+    // check the opponent first
     if (playerSide === game.turn()
-        && newScore - initScore >= 400
+        && newScore - initScore >= 500
+        && !game.isCheck()) {
+        return newScore
+    }
+
+    // if the last move loses too much, we don't need to go further
+    if (playerSide !== game.turn()
+        && newScore - initScore <= -500
         && !game.isCheck()) {
         return newScore
     }
