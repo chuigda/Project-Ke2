@@ -129,6 +129,7 @@ export function hceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean)
 
 export function findMoves(
     game: Chess,
+    withoutKing: boolean,
     depth: number,
     counter: Ref<number>
 ): [string, number][] {
@@ -142,14 +143,14 @@ export function findMoves(
     }
 
     const currentSide = game.turn()
-    const currentScore = hceEvaluate(game, currentSide, false)
+    const currentScore = hceEvaluate(game, currentSide, withoutKing)
 
     const moves = game.moves({ verbose: true })
     const scores: [string, number][] = []
 
     for (const move of moves) {
         game.move(move)
-        const score = dfsEvaluate(game, depth, counter)
+        const score = dfsEvaluatePosition(currentSide, game, withoutKing, depth, counter)
         const scoreDiff = score - currentScore
         game.undo()
 
@@ -160,44 +161,54 @@ export function findMoves(
     return scores
 }
 
-export function dfsEvaluate(
+export function dfsEvaluatePosition(
+    playerSide: PlayerSide,
     game: Chess,
+    withoutKing: boolean,
     depth: number,
     counter: Ref<number>
 ): number {
     counter.value += 1
+
     if (depth === 0) {
-        // evaluate for OPPONENT side
-        return hceEvaluate(game, game.turn(), true)
+        return hceEvaluate(game, playerSide, true)
     }
 
-    const moves = game.moves({ verbose: true })
-    if (moves.length === 0) {
-        if (game.isCheckmate()) {
-            // after the player moves, the opponent is checkmated, so the player wins
-            return 99999
-        } else if (game.isStalemate()) {
-            return 0
+    if (!withoutKing && game.isCheckmate()) {
+        if (playerSide === game.turn()) {
+            return -PieceValue['k']
         } else {
-            // don't know what to do here
-            return 0
+            return PieceValue['k']
         }
     }
 
+    if (game.isDraw()) {
+        return 0
+    }
+
+    const moves = game.moves({ verbose: true })
     const scores = []
     for (const move of moves) {
         game.move(move)
-        const score = dfsEvaluate(game, depth - 1, counter)
+        const score = dfsEvaluatePosition(playerSide, game, withoutKing, depth - 1, counter)
         game.undo()
         scores.push(score)
     }
 
-    return Math.max(...scores)
+    if (scores.length === 0) {
+        return 0
+    }
+
+    if (game.turn() === playerSide) {
+        return Math.max(...scores)
+    } else {
+        return Math.min(...scores)
+    }
 }
 
-export function findOneMove(game: Chess, depth: number): [string, number] {
+export function findOneMove(game: Chess, withoutKing: boolean, depth: number): [string, number] {
     const counter = { value: 0 }
-    const moves = findMoves(game, depth, counter)
+    const moves = findMoves(game, withoutKing, depth, counter)
     console.log('searched positions:', counter.value)
     console.log('found moves:', moves)
 
