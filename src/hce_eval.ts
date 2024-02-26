@@ -160,7 +160,7 @@ export function dfsEvaluatePosition(
     }
 
     // if the last move benefits the player too much, we don't need to go further
-    if (playerSide === game.turn() && newScore - initScore > 500) {
+    if (playerSide === game.turn() && newScore - initScore >= 500) {
         return newScore
     }
 
