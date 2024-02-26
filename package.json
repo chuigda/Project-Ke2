@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/node": "^20.11.20",
     "chess.js": "^1.0.0-beta.7",
+    "npm": "^10.4.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {

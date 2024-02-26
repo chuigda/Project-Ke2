@@ -1,7 +1,7 @@
 import { Chess, Square } from 'chess.js'
 import { PlayerSide, PieceKind, ChessboardFiles } from './def'
 import { OpeningBook } from './opening'
-import { Ref } from './ref'
+import { Ref, ref } from './ref'
 
 export const PieceValue: Record<PieceKind, number> = {
     'k': 99999,
@@ -13,7 +13,9 @@ export const PieceValue: Record<PieceKind, number> = {
 }
 
 // Since king also can take a part in the battle, we give it a value
-export const KingTacticalValue = 3.5
+export const KingTacticalValue: number = 350
+
+export const SquareControlTacticalValue: number = 12.5
 
 export const SquarePositionalValueWhite: number[][] = [
     [0.8, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.8],
@@ -65,8 +67,7 @@ export function hceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean)
                 case 'q': pieceValue = PieceValue['q']; break
                 case 'k': {
                     // if only one side has king, the checkmate rule actually doesn't apply
-                    // so we use the actual "tactical" value of the king. It's estimated
-                    // 3.5~4 points
+                    // so we use the actual "tactical" value of the king (the power of the king)
                     if (withoutKing) {
                         pieceValue = KingTacticalValue
                     } else {
@@ -86,11 +87,11 @@ export function hceEvaluate(game: Chess, side: PlayerSide, withoutKing: boolean)
             // positional advantage evaluation, we give 20 centipawn for each square
             // under control
             if (game.isAttacked(<Square>square, 'w')) {
-                whiteScore += 20 * SquarePositionalValue['w'][rank][file]
+                whiteScore += SquareControlTacticalValue * SquarePositionalValue['w'][rank][file]
             }
-            
+
             if (game.isAttacked(<Square>square, 'b')) {
-                blackScore += 20 * SquarePositionalValue['b'][rank][file]
+                blackScore += SquareControlTacticalValue * SquarePositionalValue['b'][rank][file]
             }
         }
     }
@@ -181,27 +182,29 @@ export function dfsEvaluatePosition(
     }
 }
 
-export function findOneMove(game: Chess, withoutKing: boolean, depth: number): [string, number] {
-    const counter = { value: 0 }
+export function findOneMove(
+    game: Chess,
+    withoutKing: boolean,
+    depth: number,
+    cplTolerance: number,
+    counter? : Ref<number>
+): [string, number] {
+    if (!counter) {
+        counter = ref(0)
+    }
+
     const moves = findMoves(game, withoutKing, depth, counter)
-    console.log('searched positions:', counter.value)
-    console.log('found moves:', moves)
 
-    // if (moves.length === 0) {
-    //     return ['', 0]
-    // }
+    if (cplTolerance <= 0) {
+        return moves[0]
+    } else {
+        const bestMoveValue = moves[0][1]
+        const okMoves = moves.filter(([, value]) => value >= bestMoveValue - cplTolerance)
 
-    // // randomly pick a move that is not a blunder (centipawn - 250)
-    // const blunderThreshold = -250
-    // const nonBlunders = moves.filter(x => x[1] > blunderThreshold)
-    // // if in zugzwang, just do our
-    // if (nonBlunders.length === 0) {
-    //     return moves[0]
-    // }
-
-    // // pick one from the non-blunders
-    // return nonBlunders[Math.floor(Math.random() * nonBlunders.length)]
-
-    // just pick the best move
-    return moves[0]
+        if (okMoves.length === 0) {
+            return moves[0]
+        } else {
+            return okMoves[Math.floor(Math.random() * okMoves.length)]
+        }
+    }
 }
