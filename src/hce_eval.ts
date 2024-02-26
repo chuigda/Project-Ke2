@@ -126,7 +126,14 @@ export function findMoves(
 
     for (const move of moves) {
         game.move(move)
-        const score = dfsEvaluatePosition(currentSide, game, withoutKing, depth, counter)
+        const score = dfsEvaluatePosition(
+            currentSide,
+            currentScore,
+            game,
+            withoutKing,
+            depth,
+            counter
+        )
         const scoreDiff = score - currentScore
         game.undo()
 
@@ -139,6 +146,7 @@ export function findMoves(
 
 export function dfsEvaluatePosition(
     playerSide: PlayerSide,
+    initScore: number,
     game: Chess,
     withoutKing: boolean,
     depth: number,
@@ -146,8 +154,14 @@ export function dfsEvaluatePosition(
 ): number {
     counter.value += 1
 
+    const newScore = hceEvaluate(game, playerSide, withoutKing)
     if (depth === 0) {
-        return hceEvaluate(game, playerSide, true)
+        return newScore
+    }
+
+    // if the last move benefits the player too much, we don't need to go further
+    if (playerSide === game.turn() && newScore - initScore > 250) {
+        return newScore
     }
 
     if (!withoutKing && game.isCheckmate()) {
@@ -166,7 +180,7 @@ export function dfsEvaluatePosition(
     const scores = []
     for (const move of moves) {
         game.move(move)
-        const score = dfsEvaluatePosition(playerSide, game, withoutKing, depth - 1, counter)
+        const score = dfsEvaluatePosition(playerSide, initScore, game, withoutKing, depth - 1, counter)
         game.undo()
         scores.push(score)
     }
