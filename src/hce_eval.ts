@@ -28,7 +28,7 @@ export const KnightValueMap: number[] = [
     0.5, 0.75, 1, 1, 1, 1, 0.75, 0.5,
     0.375, 0.5, 0.75, 0.75, 0.75, 0.75, 0.5, 0.375,
     0.25, 0.375, 0.5, 0.5, 0.5, 0.5, 0.375, 0.25
-].map(x => x * 1.1)
+].map(x => Math.sqrt(x * 1.2))
 
 export const BishopValueMap: number[] = [
     0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384,
@@ -39,7 +39,7 @@ export const BishopValueMap: number[] = [
     0.5384, 0.6923, 0.8462, 0.8462, 0.8462, 0.8462, 0.6923, 0.5384,
     0.5384, 0.6923, 0.6923, 0.6923, 0.6923, 0.6923, 0.6923, 0.5384,
     0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384, 0.5384,
-].map(x => x * 1.1)
+].map(x => Math.sqrt(x * 1.2))
 
 // rook is centre-insensitive, it controls the same number of squares
 // no matter where it is placed. We just give a value of 0.5 for rooks'

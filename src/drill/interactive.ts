@@ -19,8 +19,11 @@ async function main() {
         console.log(game.ascii())
         const move = await askForMove()
         game.move(move)
+
+        const startTime = Date.now()
         const hceMove = findOneMove(game, depth)
-        console.log('HCE move:', hceMove)
+        const endTime = Date.now()
+        console.log('evaluation took:', (endTime - startTime), 'HCE move found:', hceMove)
         game.move(hceMove[0])
     }
     console.log(game.ascii())
