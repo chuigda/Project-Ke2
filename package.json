@@ -4,14 +4,19 @@
   "description": "JavaScript HCE chess engine",
   "main": "index.ts",
   "scripts": {
-    "drill": "npx ts-node src/drill/drill.ts"
+    "drill": "npx ts-node src/drill/drill.ts",
+    "interactive": "npx ts-node src/drill/interactive.ts"
   },
   "author": "Chuigda WhiteGive",
   "license": "ISC",
   "dependencies": {
-    "chess.js": "^1.0.0-beta.7"
+    "@types/node": "^20.11.20",
+    "chess.js": "^1.0.0-beta.7",
+    "npm": "^10.4.0",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/node": "^20.11.20",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
