@@ -8,7 +8,7 @@ engine = chess.engine.SimpleEngine.popen_uci("C:\\Applications\\stockfish.exe")
 engine.configure({
     "UCI_AnalyseMode": True,
     "Threads": 8,
-    "Hash": 4096
+    "Hash": 8192
 })
 
 def add_line(line_pgn: str, eco: str, name: str):
