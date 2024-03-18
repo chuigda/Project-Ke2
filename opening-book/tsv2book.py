@@ -5,6 +5,7 @@ import chess.engine
 
 book = {}
 engine = chess.engine.SimpleEngine.popen_uci("C:\\Applications\\stockfish.exe")
+engine.configure({ "Threads": 4 })
 
 def add_line(line_pgn: str, eco: str, name: str):
     pgn_io = io.StringIO(line_pgn)
@@ -38,7 +39,7 @@ def add_line(line_pgn: str, eco: str, name: str):
                 book[fen]["eco"] = eco
                 book[fen]["name"] = name
 
-        info = engine.analyse(board, chess.engine.Limit(depth=10))
+        info = engine.analyse(board, chess.engine.Limit(depth=30))
         if "score" not in info:
             score = prev_score
         else:

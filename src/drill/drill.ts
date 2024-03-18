@@ -2,4 +2,9 @@ import { initOpeningBook } from "../opening"
 
 const openingBook = initOpeningBook()
 
-console.log("In total", Object.keys(openingBook).length, "positions in the opening book")
+// save opening book to opening-book.json
+
+import fs from "fs"
+
+fs.writeFileSync("opening-book.json", JSON.stringify(openingBook, null, 2))
+
