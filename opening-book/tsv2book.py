@@ -1,12 +1,13 @@
-import io, json, sys
+import io, json, sys, time
 import chess
 import chess.pgn
 import chess.engine
 
+cached_position_score = {}
 book = {}
-engine = chess.engine.SimpleEngine.popen_uci("C:\\Applications\\stockfish.exe")
+engine = chess.engine.SimpleEngine.popen_uci("/root/stockfish/stockfish")
 engine.configure({
-    "UCI_AnalyseMode": True,
+#    "UCI_AnalyseMode": True,
     "Threads": 8,
     "Hash": 8192
 })
@@ -43,11 +44,15 @@ def add_line(line_pgn: str, eco: str, name: str):
                 book[fen]["eco"] = eco
                 book[fen]["name"] = name
 
-        info = engine.analyse(board, chess.engine.Limit(depth=30))
-        if "score" not in info:
-            score = prev_score
+        if fen in cached_position_score:
+            score = cached_position_score[fen]
         else:
-            score = info["score"].white().score(mate_score=999)
+            info = engine.analyse(board, chess.engine.Limit(depth=20))
+            if "score" not in info:
+                score = prev_score
+            else:
+                score = info["score"].white().score(mate_score=999)
+            cached_position_score[fen] = score
 
         if line.move is not None:
             uci = line.move.uci()
@@ -77,8 +82,13 @@ for tsv_file in ["a.tsv", "b.tsv", "c.tsv", "d.tsv", "e.tsv"]:
                 name, ": ",
                 pgn.removesuffix("\n"),
                 sep="",
+                end="",
                 file=sys.stderr)
+            sys.stderr.flush()
+            start_time = time.time()
             add_line(pgn, eco, name)
+            end_time = time.time()
+            print(" took", str(end_time - start_time), file=sys.stderr)
 
 engine.close()
 
